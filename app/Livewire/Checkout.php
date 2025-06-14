@@ -218,14 +218,6 @@ class Checkout extends Component
                     if ($quantity <= 0) {
                         return null;
                     }
-                    // Manage Stock
-                    if ($product->should_track) {
-                        if ($product->stock_count <= 0) {
-                            return null; // Allow overstock
-                        }
-                        $quantity = $product->stock_count >= $quantity ? $quantity : $product->stock_count;
-                        $product->decrement('stock_count', $quantity);
-                    }
 
                     // Needed Attributes
                     return [$id => [
@@ -285,8 +277,6 @@ class Checkout extends Component
                     'subtotal' => cart()->subtotal(),
                 ],
             ];
-
-            // \LaravelFacebookPixel::createEvent('Purchase', ['currency' => 'USD', 'value' => data_get(json_decode($data['data'], true), 'subtotal')]);
 
             $order = Order::create($data);
             $user->notify(new OrderPlaced($order));

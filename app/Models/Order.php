@@ -94,12 +94,12 @@ class Order extends Model
 
     public function adjustStock(): void
     {
-        if ($this->exists && ! $this->isDirty('status')) {
+        if ($this->wasRecentlyCreated || ($this->exists && ! $this->isDirty('status'))) {
             return;
         }
 
-        $increment = ['PENDING', 'WAITING', 'RETURNED', 'CANCELLED'];
-        $decrement = ['CONFIRMED', 'INVOICED', 'SHIPPING', 'COMPLETED', 'LOST'];
+        $increment = config('app.increment');
+        $decrement = config('app.decrement');
 
         $prev = $this->getOriginal('status');
         $next = $this->getAttribute('status');

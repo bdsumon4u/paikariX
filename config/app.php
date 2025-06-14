@@ -28,6 +28,10 @@ return [
         'CANCELLED',
     ],
 
+    'increment' => ['PENDING', 'WAITING', 'RETURNED', 'CANCELLED'],
+
+    'decrement' => ['CONFIRMED', 'INVOICED', 'SHIPPING', 'COMPLETED', 'LOST'],
+
     'round_robin_order_receiving' => env('ROUND_ROBIN_ORDER_RECEIVING', false),
 
     /*

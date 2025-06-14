@@ -7,7 +7,6 @@ use App\Models\Category;
 use App\Traits\PreventsSourcedResourceDeletion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
