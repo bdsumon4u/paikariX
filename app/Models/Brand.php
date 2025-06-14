@@ -16,7 +16,11 @@ class Brand extends Model
             cache()->forget('brands');
         });
 
-        static::deleting(function (): void {
+        static::deleting(function ($record): void {
+            if ($record->source_id !== null) {
+                throw new \Exception('Cannot delete a resource that has been sourced.');
+            }
+
             cache()->forget('brands');
         });
     }

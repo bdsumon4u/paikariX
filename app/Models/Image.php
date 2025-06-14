@@ -13,6 +13,15 @@ class Image extends Model
         'filename', 'disk', 'path', 'extension', 'mime', 'size',
     ];
 
+    public static function booted(): void
+    {
+        static::deleting(function ($record): void {
+            if ($record->source_id !== null) {
+                throw new \Exception('Cannot delete a resource that has been sourced.');
+            }
+        });
+    }
+
     public function sizeHuman(): Attribute
     {
         $bytes = $this->size;

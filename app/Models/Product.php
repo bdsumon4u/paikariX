@@ -63,8 +63,12 @@ class Product extends Model
             }
         });
 
-        static::deleting(function ($product): void {
-            $product->variations->each->delete();
+        static::deleting(function ($record): void {
+            if ($record->source_id !== null) {
+                throw new \Exception('Cannot delete a resource that has been sourced.');
+            }
+
+            $record->variations->each->delete();
         });
 
         static::addGlobalScope('latest', function (Builder $builder): void {

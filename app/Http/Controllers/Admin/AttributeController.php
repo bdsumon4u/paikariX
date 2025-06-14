@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attribute;
+use App\Traits\PreventsSourcedResourceDeletion;
 use Illuminate\Http\Request;
 
 class AttributeController extends Controller
 {
+    use PreventsSourcedResourceDeletion;
+
     /**
      * Display a listing of the resource.
      *
@@ -83,9 +86,14 @@ class AttributeController extends Controller
      */
     public function destroy(Attribute $attribute)
     {
-        abort_unless(request()->user()->is('admin'), 403, 'You don\'t have permission.');
+        abort_if(request()->user()->is('salesman'), 403, 'You don\'t have permission.');
+
+        if (($result = $this->preventSourcedResourceDeletion($attribute)) !== true) {
+            return $result;
+        }
+
         $attribute->delete();
 
-        return redirect()->action([static::class, 'index']);
+        return back()->with('success', 'Attribute Has Been Deleted.');
     }
 }

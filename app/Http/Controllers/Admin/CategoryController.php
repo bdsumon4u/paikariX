@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Traits\PreventsSourcedResourceDeletion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
+    use PreventsSourcedResourceDeletion;
+
     /**
      * Display a listing of the resource.
      *
@@ -113,12 +116,14 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        abort_unless(request()->user()->is('admin'), 403, 'You don\'t have permission.');
-        DB::transaction(function () use ($category): void {
-            $category->childrens()->delete();
-            $category->delete();
-        });
+        abort_if(request()->user()->is('salesman'), 403, 'You don\'t have permission.');
 
-        return redirect()->route('admin.categories.index')->with('success', 'Category Has Been Deleted.');
+        if (($result = $this->preventSourcedResourceDeletion($category)) !== true) {
+            return $result;
+        }
+
+        $category->delete();
+
+        return back()->with('success', 'Category Has Been Deleted.');
     }
 }

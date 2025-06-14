@@ -19,8 +19,12 @@ class Category extends Model
             // cache()->forget('catmenu:nestedwithparent');
         });
 
-        static::deleting(function ($category): void {
-            $category->childrens->each->delete();
+        static::deleting(function ($record): void {
+            if ($record->source_id !== null) {
+                throw new \Exception('Cannot delete a resource that has been sourced.');
+            }
+
+            $record->childrens->each->delete();
             // optional($category->categoryMenu)->delete();
             cache()->forget('categories:nested');
             cache()->forget('homesections');

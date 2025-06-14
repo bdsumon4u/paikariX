@@ -10,9 +10,12 @@ use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Traits\PreventsSourcedResourceDeletion;
 
 class ProductController extends Controller
 {
+    use PreventsSourcedResourceDeletion;
+
     /**
      * Display a listing of the resource.
      *
@@ -108,6 +111,11 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         abort_unless(request()->user()->is('admin'), 403, 'You don\'t have permission.');
+
+        if (($result = $this->preventSourcedResourceDeletion($product)) !== true) {
+            return $result;
+        }
+
         $product->delete();
 
         return request()->ajax()
