@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Notifications\User\AccountCreated;
 use App\Notifications\User\OrderPlaced;
+use App\Http\Resources\ProductResource;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Cookie;
@@ -219,17 +220,7 @@ class Checkout extends Component
                         return null;
                     }
 
-                    // Needed Attributes
-                    return [$id => [
-                        'id' => $id,
-                        'name' => $product->var_name,
-                        'slug' => $product->slug,
-                        'image' => optional($product->base_image)->src,
-                        'price' => $selling = $product->getPrice($quantity),
-                        'quantity' => $quantity,
-                        'category' => $product->category,
-                        'total' => $quantity * $selling,
-                    ]];
+                    return [$id => (new ProductResource($product))->toCartItem($quantity)];
                 })->filter(function ($product) {
                     return $product != null; // Only Available Products
                 })->toArray();

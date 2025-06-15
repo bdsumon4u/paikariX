@@ -4,10 +4,13 @@ namespace App\Livewire;
 
 use App\Models\Attribute;
 use App\Models\Product;
+use App\Traits\HasCart;
 use Livewire\Component;
 
 class ProductDetail extends Component
 {
+    use HasCart;
+
     public Product $product;
 
     public Product $selectedVar;
@@ -25,7 +28,7 @@ class ProductDetail extends Component
         $component = new self;
         $component->product = $product;
         $component->mount();
-        $component->addToCart('landing');
+        $component->addToCart($component->selectedVar, $component->quantity, 'landing');
 
         return $component;
     }
@@ -55,51 +58,7 @@ class ProductDetail extends Component
 
     public function addToCart($instance = 'default')
     {
-        session(['kart' => $instance]);
-        if ($instance == 'landing') {
-            cart()->destroy();
-        }
-        cart()->instance($instance)->add(
-            $this->selectedVar->id,
-            $this->selectedVar->var_name,
-            $quantity = min($this->quantity, $this->maxQuantity),
-            $this->selectedVar->getPrice($quantity),
-            [
-                'parent_id' => $this->selectedVar->parent_id ?? $this->selectedVar->id,
-                'slug' => $this->selectedVar->slug,
-                'image' => optional($this->selectedVar->base_image)->path,
-                'category' => $this->product->category,
-                'max' => $this->maxQuantity,
-                'shipping_inside' => $this->selectedVar->shipping_inside,
-                'shipping_outside' => $this->selectedVar->shipping_outside,
-            ],
-        );
-
-        storeOrUpdateCart();
-
-        $this->dispatch('dataLayer', [
-            'event' => 'add_to_cart',
-            'ecommerce' => [
-                'currency' => 'BDT',
-                'value' => $this->selectedVar->getPrice($quantity),
-                'items' => [
-                    [
-                        'item_id' => $this->selectedVar->id,
-                        'item_name' => $this->selectedVar->name,
-                        'item_category' => $this->product->category,
-                        'price' => $this->selectedVar->getPrice($quantity),
-                        'quantity' => $quantity,
-                    ],
-                ],
-            ],
-        ]);
-
-        $this->dispatch('cartUpdated');
-        $this->dispatch('notify', ['message' => 'Product added to cart']);
-
-        if ($instance != 'default' && $instance != 'landing') {
-            return redirect()->route('checkout');
-        }
+        return $this->addToKart($this->selectedVar, $this->quantity, $instance);
     }
 
     public function mount(): void

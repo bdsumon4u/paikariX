@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Notifications\User\OrderConfirmed;
+use App\Http\Resources\ProductResource;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Validate;
@@ -135,17 +136,11 @@ class EditOrder extends Component
             $product->decrement('stock_count', $quantity);
         }
 
-        $this->selectedProducts[$id] = [
-            'id' => $id,
-            'name' => $product->var_name,
-            'slug' => $product->slug,
-            'image' => optional($product->base_image)->src,
-            'price' => $selling = $product->getPrice($quantity),
-            'quantity' => $quantity,
-            'total' => $quantity * $selling,
-            'shipping_inside' => $product->shipping_inside,
-            'shipping_outside' => $product->shipping_outside,
-        ];
+        $productData = (new ProductResource($product))->toCartItem($quantity);
+        $productData['shipping_inside'] = $product->shipping_inside;
+        $productData['shipping_outside'] = $product->shipping_outside;
+
+        $this->selectedProducts[$id] = $productData;
 
         $this->updatedShippingArea('');
 

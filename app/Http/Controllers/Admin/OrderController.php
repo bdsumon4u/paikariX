@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Resources\ProductResource;
 
 class OrderController extends Controller
 {
@@ -441,16 +442,7 @@ class OrderController extends Controller
                         }
                     }
                     if ($quantity > 0) {
-                        return [
-                            'id' => $product->id,
-                            'name' => $product->name,
-                            'slug' => $product->slug,
-                            'image' => optional($product->base_image)->src,
-                            'price' => $selling = $product->getPrice($quantity),
-                            'quantity' => $quantity,
-                            'category' => $product->category,
-                            'total' => $quantity * $selling,
-                        ];
+                        return (new ProductResource($product))->toCartItem($quantity);
                     }
                 }
             })->filter(function ($product) {
