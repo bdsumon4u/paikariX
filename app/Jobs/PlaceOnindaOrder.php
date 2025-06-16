@@ -2,8 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Http\Resources\ProductResource;
 use App\Models\Admin;
 use App\Models\Order;
+use App\Models\Product;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -31,6 +33,7 @@ class PlaceOnindaOrder implements ShouldQueue
         }
 
         $data = $this->order->getRawOriginal();
+        unset($data['id'], $data['source_id']);
 
         // Get old orders to determine admin assignment
         $oldOrders = DB::connection('oninda')
@@ -63,8 +66,56 @@ class PlaceOnindaOrder implements ShouldQueue
             }
         }
 
+        // Map products from Oninda database
+        $products = json_decode($data['products'], true);
+
+        // Get source_ids from reseller's products
+        $sourceIds = collect($products)->pluck('source_id')->filter()->toArray();
+
+        $onindaProducts = Product::on('oninda')
+            ->whereIn('id', $sourceIds)
+            ->get();
+
+        $mappedProducts = collect($products)->map(function ($product) use ($onindaProducts) {
+            $onindaProduct = $onindaProducts->firstWhere('id', $product['source_id']);
+            if (! $onindaProduct) {
+                return null;
+            }
+
+            $cartItem = (new ProductResource($onindaProduct))->toCartItem($product['quantity']);
+            $cartItem['shipping_inside'] = $onindaProduct->shipping_inside;
+            $cartItem['shipping_outside'] = $onindaProduct->shipping_outside;
+
+            // Add retail price information
+            $cartItem['retail_price'] = $product['price'];
+
+            return $cartItem;
+        })->filter()->values()->toArray();
+
+        $data['products'] = json_encode($mappedProducts, JSON_UNESCAPED_UNICODE);
         $data['user_id'] = $reseller->id;
         $data['admin_id'] = $admin->id;
+
+        // Modify data attribute
+        $orderData = json_decode($data['data'], true);
+        $orderData['subtotal'] = $this->order->getSubtotal($mappedProducts);
+        $orderData['retail_delivery_fee'] = $orderData['shipping_cost'];
+        $orderData['retail_discount'] = $orderData['discount'] ?? 0;
+
+        // Calculate Oninda shipping cost
+        $shippingCost = 0;
+        foreach ($mappedProducts as $product) {
+            if ($orderData['shipping_area'] === 'Inside Dhaka') {
+                $shippingCost = max($shippingCost, $product['shipping_inside']);
+            } else {
+                $shippingCost = max($shippingCost, $product['shipping_outside']);
+            }
+        }
+
+        $orderData['shipping_cost'] = $shippingCost;
+        $orderData['discount'] = 0;
+
+        $data['data'] = json_encode($orderData, JSON_UNESCAPED_UNICODE);
 
         $onindaOrder = DB::connection('oninda')
             ->table('orders')

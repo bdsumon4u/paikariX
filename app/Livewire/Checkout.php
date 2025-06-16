@@ -211,7 +211,7 @@ class Checkout extends Component
         }
 
         $this->order = DB::transaction(function () use ($data, &$order, $fraud) {
-            $products = Product::find(cart()->content()->pluck('id'))
+            $data['products'] = Product::find(cart()->content()->pluck('id'))
                 ->mapWithKeys(function (Product $product) use ($fraud) {
                     $id = $product->id;
                     $quantity = min(cart($id)->qty, $fraud->max_qty_per_product ?? 3);
@@ -221,15 +221,12 @@ class Checkout extends Component
                     }
 
                     return [$id => (new ProductResource($product))->toCartItem($quantity)];
-                })->filter(function ($product) {
-                    return $product != null; // Only Available Products
-                })->toArray();
+                })->filter()->toArray();
 
-            if (empty($products)) {
+            if (empty($data['products'])) {
                 return $this->dispatch('notify', ['message' => 'All products are out of stock.', 'type' => 'danger']);
             }
 
-            $data['products'] = json_encode($products, JSON_UNESCAPED_UNICODE);
             $user = $this->getUser($data);
             $oldOrders = $user->orders()->get();
             $status = data_get(config('app.orders', []), 0, 'PENDING'); // Default Status
@@ -286,7 +283,7 @@ class Checkout extends Component
                         'item_category' => $product['category'],
                         'price' => $product['price'],
                         'quantity' => $product['quantity'],
-                    ], $products)),
+                    ], $data['products'])),
                 ],
             ]);
 

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Jobs\CallOnindaOrderApi;
 use App\Pathao\Facade\Pathao;
 use App\Redx\Facade\Redx;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -18,12 +20,18 @@ class Order extends Model
     const MANUAL = 1;
 
     protected $fillable = [
-        'admin_id', 'user_id', 'type', 'name', 'phone', 'email', 'address', 'status', 'status_at', 'products', 'note', 'data',
+        'admin_id', 'user_id', 'type', 'name', 'phone', 'email', 'address', 'status', 'status_at', 'products', 'note', 'data', 'source_id',
     ];
 
     protected $attributes = [
         'status' => 'CONFIRMED',
         'data' => '{"subtotal":0,"shipping_cost":0,"advanced":0,"discount":0,"courier":"Other","city_id":"","area_id":"","weight":0.5}',
+    ];
+
+    protected $casts = [
+        'products' => 'array',
+        'data' => 'array',
+        'status_at' => 'datetime',
     ];
 
     protected static $logFillable = true;
@@ -39,7 +47,11 @@ class Order extends Model
         });
 
         static::saving(function (Order $order): void {
-            $order->adjustStock();
+            info('saving');
+            if (!$order->exists || $order->isDirty('status')) {
+                info('does not exist or status changed');
+                $order->adjustStock();
+            }
 
             if (! $order->isDirty('data')) {
                 return;
@@ -90,37 +102,58 @@ class Order extends Model
                 $order->fill(['data' => ['area_name' => current(array_filter($order->redxAreaList(), fn ($a): bool => $a->id == $order->data['area_id']))->name ?? 'N/A']]);
             }
         });
+
+        static::saved(function ($order) {
+            info('order saved', ['order' => $order]);
+            if (!$order->source_id && $order->status === 'CONFIRMED') {
+                CallOnindaOrderApi::dispatch($order->id);
+            }
+        });
     }
 
     public function adjustStock(): void
     {
-        if ($this->wasRecentlyCreated || ($this->exists && ! $this->isDirty('status'))) {
+        info('adjusting stock', ['order' => $this]);
+        $sign = function () {
+            $increment = config('app.increment');
+            $decrement = config('app.decrement');
+            if (!$this->exists) {
+                if (in_array($this->status, $decrement)) {
+                    return -1;
+                }
+
+                return 0;
+            }
+
+            $prev = $this->getOriginal('status');
+            $next = $this->getAttribute('status');
+
+            // if both prev and next belongs to same group, then no need to adjust stock
+            if (in_array($prev, $increment) && in_array($next, $increment)) {
+                return 0;
+            }
+            if (in_array($prev, $decrement) && in_array($next, $decrement)) {
+                return 0;
+            }
+
+            if (in_array($next, $decrement)) {
+                return -1;
+            }
+
+            return 1;
+        };
+
+        if (! $fact = $sign()) {
             return;
-        }
-
-        $increment = config('app.increment');
-        $decrement = config('app.decrement');
-
-        $prev = $this->getOriginal('status');
-        $next = $this->getAttribute('status');
-
-        // if both prev and next belongs to same group, then no need to adjust stock
-        if (in_array($prev, $increment) && in_array($next, $increment)) {
-            return;
-        }
-        if (in_array($prev, $decrement) && in_array($next, $decrement)) {
-            return;
-        }
-
-        $fact = 1;
-        if (in_array($next, $decrement)) {
-            $fact = -1;
         }
 
         $DBproducts = Product::where('should_track', true)->find(array_keys($products = (array) $this->products));
 
         foreach ($DBproducts as $product) {
-            $product->increment('stock_count', $fact * $products[$product->id]->quantity);
+            info('adjusting stock', ['product' => $product->id, 'fact' => $fact, 'quantity' => $products[$product->id]->quantity]);
+            $increment = $fact * $products[$product->id]->quantity;
+            $product->increment('stock_count', $increment);
+            info('incremented', ['product' => $product->id, 'increment' => $increment]);
         }
     }
 
