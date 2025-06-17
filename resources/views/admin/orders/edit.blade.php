@@ -30,7 +30,21 @@
                         </div>
                     </div>
                     <div class="p-3 card-body">
-                        <livewire:edit-order :order="$order" />
+                        <div class="container-fluid">
+                            @if($order->source_id)
+                            <div class="alert alert-warning">
+                                This order is managed by Oninda. Editing is restricted.
+                            </div>
+                            @endif
+
+                            <div class="mb-5 row">
+                                <div class="col-sm-12">
+                                    <div class="orders-table">
+                                        <livewire:edit-order :order="$order" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="shadow-sm card rounded-0">
@@ -83,19 +97,4 @@
 @push('js')
     <script src="{{asset('assets/js/select2/select2.full.min.js')}}"></script>
     <script src="{{asset('assets/js/select2/select2-custom.js')}}"></script>
-    <script src="{{ asset('assets/js/prism/prism.min.js') }}"></script>
-@endpush
-
-@push('scripts')
-    <script>
-        $(document).ready(function() {
-            $(document).on('change', '[name="data[courier]"]', function(ev) {
-                if (ev.target.value == 'Pathao') {
-                    $('[Pathao]').removeClass('d-none');
-                } else {
-                    $('[Pathao]').addClass('d-none');
-                }
-            });
-        });
-    </script>
 @endpush

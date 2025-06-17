@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\PathaoExport;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProductResource;
+use App\Jobs\CallOnindaOrderApi;
 use App\Models\Order;
 use App\Models\Product;
 use App\Notifications\User\OrderConfirmed;
@@ -15,7 +17,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Resources\ProductResource;
 
 class OrderController extends Controller
 {
@@ -457,6 +458,28 @@ class OrderController extends Controller
         ]);
 
         return back()->with('success', $order->getChanges() ? 'Order Updated.' : 'Not Updated.');
+    }
+
+    public function forwardToOninda(Request $request)
+    {
+        $request->validate([
+            'order_id' => 'required|array',
+        ]);
+
+        $orders = Order::whereIn('id', $request->order_id)
+            ->whereNull('source_id')
+            ->where('status', 'CONFIRMED')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return response()->json(['message' => 'No orders available to forward. All selected orders must be confirmed and not already forwarded to Oninda.'], 422);
+        }
+
+        foreach ($orders as $order) {
+            CallOnindaOrderApi::dispatch($order->id);
+        }
+
+        return response()->json(['message' => 'Orders are being forwarded to Oninda.']);
     }
 
     /**

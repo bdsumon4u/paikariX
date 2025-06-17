@@ -74,6 +74,7 @@ class OrderController extends Controller
                 },
             ])
             ->editColumn('id', fn ($row): string => '<a class="px-2 btn btn-light btn-sm text-nowrap" href="'.route('admin.orders.edit', $row->id).'">'.$row->id.'<i class="ml-1 fa fa-eye"></i></a>')
+            ->editColumn('oninda', fn ($row): string => '<a class="px-2 btn btn-light btn-sm text-nowrap" href="'.config('app.oninda_url').'/track-order?order='.($row->source_id).'">'.$row->source_id.'<i class="ml-1 fa fa-eye"></i></a>')
             ->editColumn('created_at', fn ($row): string => "<div class='text-nowrap'>".$row->created_at->format('d-M-Y').'<br>'.$row->created_at->format('h:i A').'</div>')
             ->addColumn('amount', fn ($row): int => intval($row->data['subtotal']) + intval($row->data['shipping_cost']) - intval($row->data['discount'] ?? 0) - intval($row->data['advanced'] ?? 0))
             ->editColumn('status', function ($row) {
@@ -84,7 +85,7 @@ class OrderController extends Controller
 
                 return $return.'</select>';
             })
-            ->addColumn('checkbox', fn ($row): string => '<input type="checkbox" class="form-control" name="order_id[]" value="'.$row->id.'" style="min-height: 20px;min-width: 20px;max-height: 20px;max-width: 20px;">')
+            ->addColumn('checkbox', fn ($row): string => '<input type="checkbox" class="form-control" name="order_id[]" value="'.$row->id.'" '.($row->source_id ? 'disabled title="This order is managed by Oninda"' : '').' style="min-height: 20px;min-width: 20px;max-height: 20px;max-width: 20px;">')
             ->editColumn('customer', fn ($row): string => "
                     <div>
                         <div><i class='mr-1 fa fa-user'></i>{$row->name}</div>
@@ -106,7 +107,7 @@ class OrderController extends Controller
 
                 $return = '<select data-id="'.$row->id.'" onchange="changeCourier" class="courier-column form-control-sm">';
                 foreach (couriers() as $provider) {
-                    $return .= '<option value="'.$provider.'" '.($provider == $selected ? 'selected' : '').'>'.$provider.'</option>';
+                    $return .= '<option value="'.$provider.'" '.($provider == $selected ? 'selected' : '').($row->source_id ? 'disabled title="This order is managed by Oninda"' : '').'>'.$provider.'</option>';
                 }
                 $return .= '</select>';
 
@@ -150,10 +151,10 @@ class OrderController extends Controller
             ->editColumn('staff', function ($row) use ($salesmans) {
                 $return = '<select data-id="'.$row->id.'" onchange="changeStaff" class="staff-column form-control-sm">';
                 if (! isset($salesmans[$row->admin_id])) {
-                    $return .= '<option value="'.$row->admin_id.'" selected>'.$row->admin->name.'</option>';
+                    $return .= '<option value="'.$row->admin_id.'" selected '.($row->source_id ? 'disabled title="This order is managed by Oninda"' : '').'>'.$row->admin->name.'</option>';
                 }
                 foreach ($salesmans as $id => $name) {
-                    $return .= '<option value="'.$id.'" '.($id == $row->admin_id ? 'selected' : '').'>'.$name.'</option>';
+                    $return .= '<option value="'.$id.'" '.($id == $row->admin_id ? 'selected' : '').($row->source_id ? 'disabled title="This order is managed by Oninda"' : '').'>'.$name.'</option>';
                 }
 
                 return $return.'</select>';
@@ -167,10 +168,16 @@ class OrderController extends Controller
                     ]);
                 }
             })
-            ->addColumn('actions', fn (Order $product): string => '<div>
-                    <a href="'.route('admin.orders.destroy', $product).'" data-action="delete" class="btn btn-block btn-danger">Delete</a>
-                </div>')
-            ->rawColumns(['checkbox', 'id', 'customer', 'products', 'status', 'courier', 'staff', 'created_at', 'actions'])
+            ->addColumn('actions', function (Order $order) {
+                $actions = '<div class="btn-group">';
+                if (! $order->source_id) {
+                    $actions .= '<a href="'.route('admin.orders.destroy', $order).'" data-action="delete" class="btn btn-sm btn-danger">Delete</a>';
+                }
+                $actions .= '</div>';
+
+                return $actions;
+            })
+            ->rawColumns(['checkbox', 'id', 'oninda', 'customer', 'products', 'status', 'courier', 'staff', 'created_at', 'actions'])
             ->make(true);
     }
 }

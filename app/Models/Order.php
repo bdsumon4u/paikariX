@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use App\Jobs\CallOnindaOrderApi;
 use App\Pathao\Facade\Pathao;
 use App\Redx\Facade\Redx;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Arr;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -36,7 +34,7 @@ class Order extends Model
 
     protected static $logFillable = true;
 
-    public static function booted(): void
+    protected static function booted(): void
     {
         static::retrieved(function (Order $order): void {
             if (empty($order->data['city_name'] ?? '') && ! empty($order->data['city_id'] ?? '')) {
@@ -48,7 +46,7 @@ class Order extends Model
 
         static::saving(function (Order $order): void {
             info('saving');
-            if (!$order->exists || $order->isDirty('status')) {
+            if (! $order->exists || $order->isDirty('status')) {
                 info('does not exist or status changed');
                 $order->adjustStock();
             }
@@ -102,13 +100,6 @@ class Order extends Model
                 $order->fill(['data' => ['area_name' => current(array_filter($order->redxAreaList(), fn ($a): bool => $a->id == $order->data['area_id']))->name ?? 'N/A']]);
             }
         });
-
-        static::saved(function ($order) {
-            info('order saved', ['order' => $order]);
-            if (!$order->source_id && $order->status === 'CONFIRMED') {
-                CallOnindaOrderApi::dispatch($order->id);
-            }
-        });
     }
 
     public function adjustStock(): void
@@ -117,7 +108,7 @@ class Order extends Model
         $sign = function () {
             $increment = config('app.increment');
             $decrement = config('app.decrement');
-            if (!$this->exists) {
+            if (! $this->exists) {
                 if (in_array($this->status, $decrement)) {
                     return -1;
                 }

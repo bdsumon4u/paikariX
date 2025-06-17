@@ -2,7 +2,7 @@
 
 return [
 
-    'oninda_api_url' => env('ONINDA_API_URL', 'https://oninda.com'),
+    'oninda_url' => env('ONINDA_URL', 'https://oninda.com'),
 
     /*
     |--------------------------------------------------------------------------

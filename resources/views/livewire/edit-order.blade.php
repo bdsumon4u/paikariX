@@ -8,20 +8,20 @@
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <x-label for="name">Name</x-label> <span class="text-danger">*</span>
-                        <x-input name="name" wire:model="name" placeholder="Type your name here" />
+                        <x-input name="name" wire:model="name" placeholder="Type your name here" :disabled="$order->source_id" />
                         <x-error field="name" />
                     </div>
                     <div class="form-group col-md-6">
                         <x-label for="phone">Phone</x-label> <span class="text-danger">*</span>
                         <x-input type="tel" name="phone" wire:model="phone"
-                            placeholder="Type your phone number here" />
+                            placeholder="Type your phone number here" :disabled="$order->source_id" />
                         <x-error field="phone" />
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-12">
                         <x-label for="email">Email Address</x-label>
-                        <x-input type="email" name="email" wire:model="email" placeholder="Email Address" />
+                        <x-input type="email" name="email" wire:model="email" placeholder="Email Address" :disabled="$order->source_id" />
                         <x-error field="email" />
                     </div>
                 </div>
@@ -30,13 +30,13 @@
                     <div class="form-control h-auto @error('shipping_area') is-invalid @enderror">
                         <div class="custom-control custom-radio custom-control-inline">
                             <input type="radio" class="custom-control-input" id="inside-dhaka" name="shipping"
-                                wire:model.live="shipping_area" value="Inside Dhaka">
+                                wire:model.live="shipping_area" value="Inside Dhaka" @disabled($order->source_id)>
                             <label class="custom-control-label" for="inside-dhaka">Inside
                                 Dhaka</label>
                         </div>
                         <div class="custom-control custom-radio custom-control-inline">
                             <input type="radio" class="custom-control-input" id="outside-dhaka" name="shipping"
-                                wire:model.live="shipping_area" value="Outside Dhaka">
+                                wire:model.live="shipping_area" value="Outside Dhaka" @disabled($order->source_id)>
                             <label class="custom-control-label" for="outside-dhaka">Outside
                                 Dhaka</label>
                         </div>
@@ -45,7 +45,7 @@
                 </div>
                 <div class="form-group">
                     <x-label for="address">Address</x-label> <span class="text-danger">*</span>
-                    <x-input name="address" wire:model="address" placeholder="Enter Correct Address" />
+                    <x-input name="address" wire:model="address" placeholder="Enter Correct Address" :disabled="$order->source_id" />
                     <x-error field="address" />
                 </div>
                 <div class="form-group">
@@ -54,7 +54,7 @@
                         @foreach (couriers() as $provider)
                             <div class="custom-control custom-radio custom-control-inline">
                                 <input type="radio" class="custom-control-input" id="{{ $provider }}"
-                                    wire:model.live="courier" value="{{ $provider }}">
+                                    wire:model.live="courier" value="{{ $provider }}" @disabled($order->source_id)>
                                 <label class="custom-control-label"
                                     for="{{ $provider }}">{{ $provider }}</label>
                             </div>
@@ -65,7 +65,7 @@
                 <div Pathao class="form-row @if ($courier != 'Pathao') d-none @endif">
                     <div class="form-group col-md-4">
                         <label for="">City</label>
-                        <select class="form-control" wire:model.live="city_id">
+                        <select class="form-control" wire:model.live="city_id" :disabled="$order->source_id">
                             <option value="" selected>Select City</option>
                             @foreach ($order->pathaoCityList() as $city)
                                 <option value="{{ $city->city_id }}">
@@ -80,7 +80,7 @@
                         <div wire:loading.class="d-flex" wire:target="city_id" class="d-none h-100 align-items-center">
                             Loading Area...
                         </div>
-                        <select wire:loading.remove wire:target="city_id" class="form-control" wire:model="area_id">
+                        <select wire:loading.remove wire:target="city_id" class="form-control" wire:model="area_id" @disabled($order->source_id)>
                             <option value="" selected>Select Area</option>
                             @foreach ($order->pathaoAreaList($city_id) as $area)
                                 <option value="{{ $area->zone_id }}">
@@ -92,13 +92,13 @@
                     </div>
                     <div class="col-md-4">
                         <label for="weight">Weight</label>
-                        <input type="number" wire:model="weight" class="form-control" placeholder="Weight in KG">
+                        <input type="number" wire:model="weight" class="form-control" placeholder="Weight in KG" @disabled($order->source_id)>
                     </div>
                 </div>
                 <div Redx class="form-row @if ($courier != 'Redx') d-none @endif">
                     <div class="form-group col-md-6">
                         <label for="">Area</label>
-                        <select selector class="form-control" wire:model="area_id">
+                        <select selector class="form-control" wire:model="area_id" @disabled($order->source_id)>
                             <option value="" selected>Select Area</option>
                             @foreach ($order->redxAreaList() as $area)
                                 <option value="{{ $area->id }}" {{ $area->id == $area_id ? 'selected' : '' }}>
@@ -110,7 +110,7 @@
                     </div>
                     <div class="col-md-6">
                         <label for="weight">Weight</label>
-                        <input type="number" wire:model="weight" class="form-control" placeholder="Weight in grams">
+                        <input type="number" wire:model="weight" class="form-control" placeholder="Weight in grams" :disabled="$order->source_id">
                     </div>
                 </div>
             </div>
@@ -122,7 +122,7 @@
             <div class="p-3 card-body">
                 <div class="px-3 row">
                     <input type="search" wire:model.live.debounce.250ms="search" id="search"
-                        placeholder="Search Product" class="col-md-6 form-control">
+                        placeholder="Search Product" class="col-md-6 form-control" @disabled($order->source_id)>
 
                     @if (session()->has('error'))
                         <strong class="col-md-6 text-danger d-flex align-items-center">{{ session('error') }}</strong>
@@ -223,7 +223,7 @@
 
                                         @if ($available = !$selectedVar->should_track || $selectedVar->stock_count > 0)
                                             <button type="button" class="btn btn-primary"
-                                                wire:click="addProduct({{ $selectedVar }})">Add to Order</button>
+                                                wire:click="addProduct({{ $selectedVar }})" :disabled="$order->source_id">Add to Order</button>
                                         @endif
                                     </td>
                                 </tr>
@@ -253,14 +253,18 @@
                                                 class="form-control input-number__input"
                                                 name="quantity[{{ $product['id'] }}]"
                                                 value="{{ old('quantity.' . $product['id'], $product['quantity']) }}"
-                                                min="1" readonly style="border-radius: 2px;">
+                                                min="1" readonly style="border-radius: 2px;" :disabled="$order->source_id">
                                             <div class="input-number__add"
-                                                wire:click="increaseQuantity({{ $product['id'] }})">
-
+                                                @unless($order->source_id)
+                                                wire:click="increaseQuantity({{ $product['id'] }})"
+                                                @endunless
+                                            >
                                             </div>
                                             <div class="input-number__sub"
-                                                wire:click="decreaseQuantity({{ $product['id'] }})">
-
+                                                @unless($order->source_id)
+                                                wire:click="decreaseQuantity({{ $product['id'] }})"
+                                                @endunless
+                                            >
                                             </div>
                                         </div>
                                     </td>
@@ -270,11 +274,12 @@
                     </table>
                 </div>
 
-
+                @if ($order->exists)
                 <h5 class="mt-3">Courier Report</h5>
                 <div style="height: 645px; overflow: hidden; position: relative;">
                     <iframe src="https://www.bdcommerce.app/tools/delivery-fraud-check/{{$order->phone}}" width="1200" height="800" scrolling="no" style="position: absolute; top: -110px; left: -580px; overflow: hidden;"></iframe>
                 </div>
+                @endif
             </div>
         </div>
     </div>
@@ -289,7 +294,7 @@
                         <tr>
                             <th>Order Status</th>
                             <td>
-                                <select wire:model="status" id="status" class="form-control">
+                                <select wire:model="status" id="status" class="form-control" @disabled($order->source_id)>
                                     @foreach (config('app.orders', []) as $stat)
                                         <option value="{{ $stat }}">{{ $stat }}</option>
                                     @endforeach
@@ -305,7 +310,7 @@
                             <td class="shipping">
                                 <input class="shipping form-control" style="height: auto; padding: 2px 8px;"
                                     type="text" wire:model.live.debounce.350ms="shipping_cost"
-                                    class="form-control">
+                                    class="form-control" @disabled($order->source_id)>
                             </td>
                         </tr>
                     </tbody>
@@ -314,14 +319,14 @@
                             <th>Advanced</th>
                             <td>
                                 <input style="height: auto; padding: 2px 8px;" type="text"
-                                    wire:model.live.debounce.350ms="advanced" class="form-control">
+                                    wire:model.live.debounce.350ms="advanced" class="form-control" @disabled($order->source_id)>
                             </td>
                         </tr>
                         <tr>
                             <th>Discount</th>
                             <td>
                                 <input style="height: auto; padding: 2px 8px;" type="text"
-                                    wire:model.live.debounce.350ms="discount" class="form-control">
+                                    wire:model.live.debounce.350ms="discount" class="form-control" @disabled($order->source_id)>
                             </td>
                         </tr>
                         <tr>
@@ -332,7 +337,7 @@
                             <th>Note <small>(Optional)</small></th>
                             <td>
                                 <div class="form-group">
-                                    <x-textarea name="note" wire:model="note" rows="4"></x-textarea>
+                                    <x-textarea name="note" wire:model="note" rows="4" :disabled="$order->source_id" />
                                     <x-error field="note" />
                                 </div>
                             </td>
@@ -340,7 +345,7 @@
                     </tfoot>
                 </table>
                 <button type="submit" wire:click="updateOrder"
-                    class="btn btn-primary btn-xl btn-block">Update</button>
+                    class="btn btn-primary btn-xl btn-block" @disabled($order->source_id)>Update</button>
             </div>
         </div>
         @if ($order->exists)

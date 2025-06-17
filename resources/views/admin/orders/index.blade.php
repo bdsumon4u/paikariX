@@ -56,23 +56,23 @@
                                             @case('WAITING')
                                                 @php $show = in_array(request('status'), ['PENDING', 'CANCELLED']) @endphp
                                                 @break
-                                        
+
                                             @case('CONFIRMED')
                                                 @php $show = in_array(request('status'), ['PENDING', 'WAITING', 'CANCELLED']) @endphp
                                                 @break
-                                        
+
                                             @case('CANCELLED')
                                                 @php $show = in_array(request('status'), ['PENDING', 'WAITING']) @endphp
                                                 @break
-                                        
+
                                             @case('COMPLETED')
                                             @case('RETURNED')
                                             @case('LOST')
                                                 @php $show = in_array(request('status'), ['SHIPPING']) @endphp
                                                 @break
-                                        
+
                                             @default
-                                                
+
                                         @endswitch
                                         @if($show || true)
                                         <option value="{{ $status }}">{{ $status }}</option>
@@ -95,6 +95,7 @@
                                 @if(request('status') == 'CONFIRMED')
                                 <button onclick="printSticker()" id="sticker" class="ml-1 btn btn-sm btn-primary">Print Sticker</button>
                                 <button onclick="printInvoice()" id="invoice" class="ml-1 btn btn-sm btn-primary">Print Invoice</button>
+                                <button onclick="forwardToOninda()" id="forward-to-oninda" class="ml-1 btn btn-sm btn-primary">Forward to Oninda</button>
                                 @elseif(request('status') == 'INVOICED')
                                 <button onclick="courier()" id="courier" class="ml-1 btn btn-sm btn-primary">Send to Courier</button>
                                 @endif
@@ -112,6 +113,7 @@
                                     </th>
                                     @endif
                                     <th width="80">ID</th>
+                                    <th width="80">Oninda</th>
                                     <th>Customer</th>
                                     <th>Products</th>
                                     <th width="10">Amount</th>
@@ -147,7 +149,7 @@
         var checklist = new Set();
         function updateBulkMenu() {
             $('[name="check_all"]').prop('checked', true);
-            $(document).find('[name="order_id[]"]').each(function () {
+            $(document).find('[name="order_id[]"]:not([disabled])').each(function () {
                 if (checklist.has($(this).val())) {
                     $(this).prop('checked', true);
                 } else {
@@ -167,15 +169,15 @@
         }
         $('[name="check_all"]').on('change', function () {
             if ($(this).prop('checked')) {
-                $(document).find('[name="order_id[]"]').each(function () {
+                $(document).find('[name="order_id[]"]:not([disabled])').each(function () {
                     checklist.add($(this).val());
                 });
             } else {
-                $(document).find('[name="order_id[]"]').each(function () {
+                $(document).find('[name="order_id[]"]:not([disabled])').each(function () {
                     checklist.delete($(this).val());
                 });
             }
-            $('[name="order_id[]"]').prop('checked', $(this).prop('checked'));
+            $('[name="order_id[]"]:not([disabled])').prop('checked', $(this).prop('checked'));
             updateBulkMenu();
         });
 
@@ -221,6 +223,7 @@
                 { data: 'checkbox', name: 'checkbox', sortable: false, searchable: false},
                 @endif
                 { data: 'id', name: 'id' },
+                { data: 'oninda', name: 'oninda', sortable: false, searchable: false },
                 { data: 'customer', name: 'customer', sortable: false },
                 { data: 'products', name: 'products', sortable: false },
                 { data: 'amount', name: 'amount', sortable: false },
@@ -422,6 +425,30 @@
             window.open('{{ route('admin.orders.booking') }}?order_id=' + $('[name="order_id[]"]:checked').map(function () {
                 return $(this).val();
             }).get().join(','), '_self');
+        }
+
+        function forwardToOninda() {
+            if (checklist.size === 0) {
+                $.notify('Please select at least one order', 'warning');
+                return;
+            }
+
+            $.post({
+                url: '{{ route('admin.orders.forward-to-oninda') }}',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    order_id: Array.from(checklist),
+                },
+                success: function (response) {
+                    checklist.clear();
+                    updateBulkMenu();
+                    table.draw();
+                    $.notify('Orders are being forwarded to Oninda', 'success');
+                },
+                error: function (response) {
+                    $.notify(response?.responseJSON?.message || 'Failed to forward orders to Oninda', 'danger');
+                }
+            });
         }
     </script>
 

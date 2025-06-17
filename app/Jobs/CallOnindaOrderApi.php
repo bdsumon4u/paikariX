@@ -21,7 +21,7 @@ class CallOnindaOrderApi implements ShouldQueue
     {
         $domain = request()->getHost();
 
-        Http::post(config('app.oninda_api_url').'/api/reseller/orders/place', [
+        Http::post(config('app.oninda_url').'/api/reseller/orders/place', [
             'order_id' => $this->orderId,
             'domain' => $domain,
         ]);
