@@ -27,9 +27,6 @@ class CallOnindaOrderApi implements ShouldQueue
             'domain' => $domain,
         ]);
 
-        // call the api and log the response
-        Http::post($endpoint, $data)->throw()->then(function ($response) {
-            info('Oninda order API response: ' . $response->body());
-        });
+        Http::post($endpoint, $data)->throw();
     }
 }
