@@ -31,7 +31,11 @@
                     </div>
                     <div class="p-3 card-body">
                         <div class="container-fluid">
-                            @if($order->source_id)
+                            @if($order->source_id == -1)
+                            <div class="alert alert-warning">
+                                This order is on queue to be forwarded to Oninda. Editing is restricted.
+                            </div>
+                            @elseif($order->source_id)
                             <div class="alert alert-warning">
                                 This order is managed by Oninda. Editing is restricted.
                             </div>

@@ -479,6 +479,8 @@ class OrderController extends Controller
             CallOnindaOrderApi::dispatch($order->id);
         }
 
+        DB::table('orders')->whereIntegerInRaw('id', $request->order_id)->update(['source_id' => -1]);
+
         return response()->json(['message' => 'Orders are being forwarded to Oninda.']);
     }
 
