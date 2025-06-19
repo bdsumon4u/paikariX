@@ -472,7 +472,11 @@ class OrderController extends Controller
             ->get();
 
         if ($orders->isEmpty()) {
-            return response()->json(['message' => 'No orders available to forward. All selected orders must be confirmed and not already forwarded to Oninda.'], 422);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'No orders available to forward. All selected orders must be confirmed and not already forwarded to Oninda.'], 422);
+            } else {
+                return redirect()->back()->with('danger', 'No orders available to forward. All selected orders must be confirmed and not already forwarded to Oninda.');
+            }
         }
 
         foreach ($orders as $order) {
@@ -481,7 +485,11 @@ class OrderController extends Controller
 
         DB::table('orders')->whereIntegerInRaw('id', $request->order_id)->update(['source_id' => 0]);
 
-        return response()->json(['message' => 'Orders are being forwarded to Oninda.']);
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Orders are being forwarded to Oninda.']);
+        } else {
+            return redirect()->back()->with('success', 'Orders are being forwarded to Oninda.');
+        }
     }
 
     /**
