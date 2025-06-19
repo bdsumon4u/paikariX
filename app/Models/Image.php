@@ -34,7 +34,13 @@ class Image extends Model
 
     public function src(): Attribute
     {
-        return Attribute::get(fn () => asset($this->path));
+        return Attribute::get(function () {
+            if ($this->source_id) {
+                return config('app.oninda_url') . $this->path;
+            }
+
+            return asset($this->path);
+        });
     }
 
     public function products()
