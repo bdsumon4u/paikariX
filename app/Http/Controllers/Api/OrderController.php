@@ -80,12 +80,12 @@ class OrderController extends Controller
             ->editColumn('status', function ($row) {
                 $return = '<select data-id="'.$row->id.'" onchange="changeStatus" class="status-column form-control-sm">';
                 foreach (config('app.orders', []) as $status) {
-                    $return .= '<option value="'.$status.'" '.($status == $row->status ? 'selected' : '').'>'.$status.'</option>';
+                    $return .= '<option value="'.$status.'" '.($status == $row->status ? 'selected' : '').' '.(is_null($row->source_id) ? '' : 'disabled title="This order is managed by Oninda"').' >'.$status.'</option>';
                 }
 
                 return $return.'</select>';
             })
-            ->addColumn('checkbox', fn ($row): string => '<input type="checkbox" class="form-control" name="order_id[]" value="'.$row->id.'" '.($row->source_id ? 'disabled title="This order is managed by Oninda"' : '').' style="min-height: 20px;min-width: 20px;max-height: 20px;max-width: 20px;">')
+            ->addColumn('checkbox', fn ($row): string => '<input type="checkbox" class="form-control" name="order_id[]" value="'.$row->id.'" '.(is_null($row->source_id) ? '' : 'disabled title="This order is managed by Oninda"').' style="min-height: 20px;min-width: 20px;max-height: 20px;max-width: 20px;">')
             ->editColumn('customer', fn ($row): string => "
                     <div>
                         <div><i class='mr-1 fa fa-user'></i>{$row->name}</div>
@@ -107,7 +107,7 @@ class OrderController extends Controller
 
                 $return = '<select data-id="'.$row->id.'" onchange="changeCourier" class="courier-column form-control-sm">';
                 foreach (couriers() as $provider) {
-                    $return .= '<option value="'.$provider.'" '.($provider == $selected ? 'selected' : '').($row->source_id ? 'disabled title="This order is managed by Oninda"' : '').'>'.$provider.'</option>';
+                    $return .= '<option value="'.$provider.'" '.($provider == $selected ? 'selected' : '').' '.(is_null($row->source_id) ? '' : 'disabled title="This order is managed by Oninda"').'>'.$provider.'</option>';
                 }
                 $return .= '</select>';
 
@@ -151,10 +151,10 @@ class OrderController extends Controller
             ->editColumn('staff', function ($row) use ($salesmans) {
                 $return = '<select data-id="'.$row->id.'" onchange="changeStaff" class="staff-column form-control-sm">';
                 if (! isset($salesmans[$row->admin_id])) {
-                    $return .= '<option value="'.$row->admin_id.'" selected '.($row->source_id ? 'disabled title="This order is managed by Oninda"' : '').'>'.$row->admin->name.'</option>';
+                    $return .= '<option value="'.$row->admin_id.'" selected '.(is_null($row->source_id) ? '' : 'disabled title="This order is managed by Oninda"').'>'.$row->admin->name.'</option>';
                 }
                 foreach ($salesmans as $id => $name) {
-                    $return .= '<option value="'.$id.'" '.($id == $row->admin_id ? 'selected' : '').($row->source_id ? 'disabled title="This order is managed by Oninda"' : '').'>'.$name.'</option>';
+                    $return .= '<option value="'.$id.'" '.($id == $row->admin_id ? 'selected' : '').' '.(is_null($row->source_id) ? '' : 'disabled title="This order is managed by Oninda"').'>'.$name.'</option>';
                 }
 
                 return $return.'</select>';

@@ -27,11 +27,14 @@
                         <div>
                             <a href="{{ route('admin.orders.invoices', ['order_id' => $order->id]) }}" class="ml-1 btn btn-sm btn-primary">Invoice</a>
                             <a href="{{ route('admin.orders.booking', ['order_id' => $order->id]) }}" class="ml-1 btn btn-sm btn-primary">Send to Courier</a>
+                            @if($order->status == 'CONFIRMED' && is_null($order->source_id))
+                                <button onclick="forwardToOnindaSingle({{ $order->id }})" id="forward-to-oninda" class="ml-1 btn btn-sm btn-primary">Forward to Oninda</button>
+                            @endif
                         </div>
                     </div>
                     <div class="p-3 card-body">
                         <div class="container-fluid">
-                            @if($order->source_id == -1)
+                            @if($order->source_id === 0)
                             <div class="alert alert-warning">
                                 This order is on queue to be forwarded to Oninda. Editing is restricted.
                             </div>
@@ -101,4 +104,26 @@
 @push('js')
     <script src="{{asset('assets/js/select2/select2.full.min.js')}}"></script>
     <script src="{{asset('assets/js/select2/select2-custom.js')}}"></script>
+    <script>
+        function forwardToOnindaSingle(orderId) {
+            if (!orderId) {
+                $.notify('Order ID is missing', 'warning');
+                return;
+            }
+            $.post({
+                url: '{{ route('admin.orders.forward-to-oninda') }}',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    order_id: [orderId],
+                },
+                success: function (response) {
+                    $.notify('Order is being forwarded to Oninda', 'success');
+                    setTimeout(function() { location.reload(); }, 1500);
+                },
+                error: function (response) {
+                    $.notify(response?.responseJSON?.message || 'Failed to forward order to Oninda', 'danger');
+                }
+            });
+        }
+    </script>
 @endpush
