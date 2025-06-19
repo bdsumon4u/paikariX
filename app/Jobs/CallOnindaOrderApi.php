@@ -19,11 +19,14 @@ class CallOnindaOrderApi implements ShouldQueue
 
     public function handle(): void
     {
-        $domain = request()->getHost();
+        $domain = parse_url(config('app.url'), PHP_URL_HOST);
 
+        // call the api and log the response
         Http::post(config('app.oninda_url').'/api/reseller/orders/place', [
             'order_id' => $this->orderId,
             'domain' => $domain,
-        ]);
+        ])->throw()->then(function ($response) {
+            info('Oninda order API response: ' . $response->body());
+        });
     }
 }
