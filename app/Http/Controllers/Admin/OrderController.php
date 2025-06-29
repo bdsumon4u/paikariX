@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Exports\PathaoExport;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
-use App\Jobs\CallOnindaOrderApi;
 use App\Models\Order;
 use App\Models\Product;
 use App\Notifications\User\OrderConfirmed;
@@ -479,9 +478,13 @@ class OrderController extends Controller
             }
         }
 
-        foreach ($orders as $order) {
-            CallOnindaOrderApi::dispatch($order->id);
-        }
+        $domain = parse_url(config('app.url'), PHP_URL_HOST);
+        $endpoint = config('app.oninda_url').'/api/reseller/orders/place';
+
+        Http::post($endpoint, [
+            'order_id' => $orders->pluck('id')->toArray(),
+            'domain' => $domain,
+        ])->throw();
 
         DB::table('orders')->whereIntegerInRaw('id', $request->order_id)->update(['source_id' => 0]);
 
