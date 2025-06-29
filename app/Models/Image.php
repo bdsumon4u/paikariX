@@ -35,7 +35,7 @@ class Image extends Model
     public function src(): Attribute
     {
         return Attribute::get(function () {
-            if ($this->source_id) {
+            if ($this->source_id || !file_exists(public_path($this->path))) { // assuming public disk
                 return config('app.oninda_url') . $this->path;
             }
 
