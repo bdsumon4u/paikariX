@@ -51,7 +51,7 @@ class ProductResource extends JsonResource
             'parent_id' => $this->resource->parent_id ?? $this->resource->id,
             'name' => $this->resource->var_name,
             'slug' => $this->resource->slug,
-            'image' => optional($this->resource->base_image)->path,
+            'image' => optional($this->resource->base_image)->src,
             'category' => $this->resource->category,
             'quantity' => $quantity,
             'price' => $price = $this->resource->getPrice($quantity),

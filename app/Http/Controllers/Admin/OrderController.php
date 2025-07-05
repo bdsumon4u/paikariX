@@ -481,12 +481,25 @@ class OrderController extends Controller
         $domain = parse_url(config('app.url'), PHP_URL_HOST);
         $endpoint = config('app.oninda_url').'/api/reseller/orders/place';
 
-        Http::post($endpoint, [
-            'order_id' => $orders->pluck('id')->toArray(),
-            'domain' => $domain,
-        ])->throw();
-
+        // Set source_id = 0 to indicate processing state
         DB::table('orders')->whereIntegerInRaw('id', $request->order_id)->update(['source_id' => 0]);
+
+        try {
+            // Make API call
+            Http::post($endpoint, [
+                'order_id' => $request->order_id,
+                'domain' => $domain,
+            ])->throw();
+        } catch (\Exception $e) {
+            // If API call fails, revert source_id to NULL
+            DB::table('orders')->whereIntegerInRaw('id', $request->order_id)->update(['source_id' => null]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Failed to forward orders to Oninda: '.$e->getMessage()], 500);
+            } else {
+                return redirect()->back()->with('danger', 'Failed to forward orders to Oninda: '.$e->getMessage());
+            }
+        }
 
         if ($request->expectsJson()) {
             return response()->json(['message' => 'Orders are being forwarded to Oninda.']);
